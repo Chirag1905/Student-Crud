@@ -8,15 +8,16 @@ app.use(bodyParser.json());
 app.use(cors());
 
 // Connect to MongoDB
-mongoose.connect(
-  "mongodb+srv://chirag:cEHMgMYxojtfmO0U@cluster0.tgz4t.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
-)
-.then(() => {
-  console.log("Connected to MongoDB");
-})
-.catch((error) => {
-  console.error("MongoDB connection error:", error);
-});
+mongoose
+  .connect(
+    "mongodb+srv://chirag:cEHMgMYxojtfmO0U@cluster0.tgz4t.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+  )
+  .then(() => {
+    console.log("Connected to MongoDB");
+  })
+  .catch((error) => {
+    console.error("MongoDB connection error:", error);
+  });
 
 // Schema for Student
 const studentSchema = new mongoose.Schema({
@@ -96,22 +97,6 @@ app.put("/api/students/:id", async (req, res) => {
 app.delete("/api/students/:id", async (req, res) => {
   await Student.findByIdAndDelete(req.params.id);
   res.json({ message: "Student deleted" });
-});
-
-// Rank Calculation
-app.get("/api/rank", async (req, res) => {
-  const students = await Student.find().sort({ totalMarks: -1 });
-  let rank = 1;
-  let previousMarks = -1;
-  students.forEach((student, index) => {
-    if (student.totalMarks !== previousMarks) {
-      rank = index + 1;
-    }
-    student.rank = rank;
-    previousMarks = student.totalMarks;
-    student.save(); // Update the rank in DB
-  });
-  res.json(students);
 });
 
 app.listen(5000, () => {

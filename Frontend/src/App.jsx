@@ -5,7 +5,8 @@ const App = () => {
   const [students, setStudents] = useState([]);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
-  const [limit] = useState(5);
+  const [totalPages, setTotalPages] = useState(1);
+  const [limit] = useState(25);
   const [sortField, setSortField] = useState('name');
   const [sortOrder, setSortOrder] = useState('asc');
   const [studentData, setStudentData] = useState({ name: '', mobile: '', maths: 0, science: 0, english: 0 });
@@ -20,7 +21,21 @@ const App = () => {
     const res = await axios.get('http://localhost:5000/api/students', {
       params: { page, limit, search, sortField, sortOrder }
     });
-    setStudents(res.data.students);
+
+    const sortedStudents = res.data.students.sort((a, b) => b.totalMarks - a.totalMarks);
+
+    let rank = 1;
+    let previousMarks = -1;
+    const rankedStudents = sortedStudents.map((student, index) => {
+      if (student.totalMarks !== previousMarks) {
+        rank = index + 1;
+      }
+      previousMarks = student.totalMarks;
+      return { ...student, rank };
+    });
+
+    setStudents(rankedStudents);
+    setTotalPages(res.data.totalPages);
   };
 
   const handleAddStudent = async () => {
@@ -73,10 +88,10 @@ const App = () => {
       <div>
         <h2>{isEditing ? 'Edit Student' : 'Add Student'}</h2>
         <input type="text" placeholder="Name" value={studentData.name} onChange={(e) => setStudentData({ ...studentData, name: e.target.value })} />
-        <input type="text" placeholder="Mobile" value={studentData.mobile} onChange={(e) => setStudentData({ ...studentData, mobile: e.target.value })} />
-        <input type="number" placeholder="Maths" value={studentData.maths} onChange={(e) => setStudentData({ ...studentData, maths: parseInt(e.target.value) })} />
-        <input type="number" placeholder="Science" value={studentData.science} onChange={(e) => setStudentData({ ...studentData, science: parseInt(e.target.value) })} />
-        <input type="number" placeholder="English" value={studentData.english} onChange={(e) => setStudentData({ ...studentData, english: parseInt(e.target.value) })} />
+        <input type="text" placeholder="Mobile" value={studentData.mobile} onChange={(e) => setStudentData({ ...studentData, mobile: e.target.value })} maxLength="10" />
+        <input type="text" placeholder="Maths" value={studentData.maths} onChange={(e) => setStudentData({ ...studentData, maths: parseInt(e.target.value) })} />
+        <input type="text" placeholder="Science" value={studentData.science} onChange={(e) => setStudentData({ ...studentData, science: parseInt(e.target.value) })} />
+        <input type="text" placeholder="English" value={studentData.english} onChange={(e) => setStudentData({ ...studentData, english: parseInt(e.target.value) })} />
         <button onClick={handleAddStudent}>{isEditing ? 'Update Student' : 'Add Student'}</button>
       </div>
 
@@ -90,7 +105,7 @@ const App = () => {
             <th>English</th>
             <th>Total Marks</th>
             <th>Percentage</th>
-            <th>Rank</th>
+            <th >Rank</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -103,7 +118,7 @@ const App = () => {
               <td>{student.science}</td>
               <td>{student.english}</td>
               <td>{student.totalMarks}</td>
-              <td>{student.percentage}%</td>
+              <td>{student.percentage.toFixed(2)}%</td>
               <td>{student.rank}</td>
               <td>
                 <button onClick={() => handleEditStudent(student)}>Edit</button>
@@ -115,7 +130,7 @@ const App = () => {
       </table>
 
       <button disabled={page === 1} onClick={() => setPage(page - 1)}>Previous</button>
-      <button onClick={() => setPage(page + 1)}>Next</button>
+      <button disabled={page === totalPages} onClick={() => setPage(page + 1)}>Next</button>
     </div>
   );
 };
